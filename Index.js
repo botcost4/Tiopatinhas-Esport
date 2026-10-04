@@ -1,3 +1,4 @@
+const http = require("http");
 const {
   Client,
   GatewayIntentBits,
@@ -13,6 +14,14 @@ const client = new Client({
   intents: [GatewayIntentBits.Guilds]
 });
 
+// Página simples para o Render
+const server = http.createServer((req, res) => {
+  res.writeHead(200, { "Content-Type": "text/plain" });
+  res.end("Tiopatinhas E-sports Bot está online!");
+});
+
+server.listen(process.env.PORT || 3000, "0.0.0.0");
+
 const commands = [
   new SlashCommandBuilder()
     .setName("ping")
@@ -26,18 +35,12 @@ const commands = [
 const rest = new REST({ version: "10" }).setToken(TOKEN);
 
 async function registrarComandos() {
-  try {
-    console.log("Registrando comandos...");
+  await rest.put(
+    Routes.applicationCommands(CLIENT_ID),
+    { body: commands }
+  );
 
-    await rest.put(
-      Routes.applicationCommands(CLIENT_ID),
-      { body: commands }
-    );
-
-    console.log("Comandos registrados!");
-  } catch (error) {
-    console.error(error);
-  }
+  console.log("Comandos registrados!");
 }
 
 client.once("ready", () => {
@@ -48,7 +51,7 @@ client.on("interactionCreate", async interaction => {
   if (!interaction.isChatInputCommand()) return;
 
   if (interaction.commandName === "ping") {
-    await interaction.reply("🏓 Pong! O bot está funcionando!");
+    await interaction.reply("🏓 Pong! Bot funcionando!");
   }
 
   if (interaction.commandName === "info") {
@@ -59,9 +62,10 @@ client.on("interactionCreate", async interaction => {
 });
 
 if (!TOKEN || !CLIENT_ID) {
-  console.error("Configure DISCORD_TOKEN e CLIENT_ID.");
+  console.error("DISCORD_TOKEN ou CLIENT_ID não configurado.");
   process.exit(1);
 }
 
-registrarComandos();
-client.login(TOKEN);
+registrarComandos()
+  .then(() => client.login(TOKEN))
+  .catch(console.error);
